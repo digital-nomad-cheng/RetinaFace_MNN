@@ -30,11 +30,11 @@ RetinaFace::RetinaFace(const std::string& model_file)
 
     // create image preprocessing pipeline
     MNN::CV::ImageProcess::Config preproc_config;
-    preproc_config.filterType = MNN::CV::BILINEAR;
+    preproc_config.filterType = MNN::CV::NEAREST;
     ::memcpy(preproc_config.mean, this->_mean_vals, sizeof(this->_mean_vals));
     // no norm in this model
     // ::memcpy(preproc_config.normal, norm_vals, sizeof(norm_vals));
-    preproc_config.sourceFormat = MNN::CV::RGB;
+    preproc_config.sourceFormat = MNN::CV::BGR;
     preproc_config.destFormat = MNN::CV::RGB;
     this->pretreat_data = std::shared_ptr<MNN::CV::ImageProcess>(MNN::CV::ImageProcess::create(preproc_config));
 }
@@ -82,7 +82,10 @@ void RetinaFace::detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) c
         Box refined_box;
         
         if (scores[1] > this->_score_threshold) {
+            // score
+            bbox.score = scores[1];
 
+            // bbox
             refined_box.cx = anchor.cx + offsets[0] * 0.1 * anchor.sx;
             refined_box.cy = anchor.cy + offsets[1] * 0.1 * anchor.sy;
             refined_box.sx = anchor.sx * exp(offsets[2] * 0.2);
@@ -94,8 +97,6 @@ void RetinaFace::detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) c
             bbox.y2 = (refined_box.cy + refined_box.sy/2) * image.rows;
 
             clip_bboxes(bbox, image.cols, image.rows);
-
-            bbox.score = scores[1];
 
             // landmarks
             for (int i = 0; i < 5; i++) {
@@ -148,31 +149,29 @@ void RetinaFace::create_anchors(std::vector<Box>& anchors, int w, int h) const
                 }
             }
         }
-
     }
-
 }
 
-void RetinaFace::nms(std::vector<BBox> &input_boxes, float nms_threshold) const
+void RetinaFace::nms(std::vector<BBox>& bboxes, float nms_threshold) const
 {
-    std::vector<float>vArea(input_boxes.size());
-    for (int i = 0; i < int(input_boxes.size()); ++i) {
-        vArea[i] = (input_boxes.at(i).x2 - input_boxes.at(i).x1 + 1)
-                   * (input_boxes.at(i).y2 - input_boxes.at(i).y1 + 1);
+    std::vector<float> bbox_areas(bboxes.size());
+    for (int i = 0; i < bboxes.size(); i++) {
+        bbox_areas[i] = (bboxes.at(i).x2 - bboxes.at(i).x1 + 1) * (bboxes.at(i).y2 - bboxes.at(i).y1 + 1);
     }
-    for (int i = 0; i < int(input_boxes.size()); ++i) {
-        for (int j = i + 1; j < int(input_boxes.size());) {
-            float xx1 = std::max(input_boxes[i].x1, input_boxes[j].x1);
-            float yy1 = std::max(input_boxes[i].y1, input_boxes[j].y1);
-            float xx2 = std::min(input_boxes[i].x2, input_boxes[j].x2);
-            float yy2 = std::min(input_boxes[i].y2, input_boxes[j].y2);
+
+    for (int i = 0; i < bboxes.size(); i++) {
+        for (int j = i + 1; j < bboxes.size(); ) {
+            float xx1 = std::max(bboxes[i].x1, bboxes[j].x1);
+            float yy1 = std::max(bboxes[i].y1, bboxes[j].y1);
+            float xx2 = std::min(bboxes[i].x2, bboxes[j].x2);
+            float yy2 = std::min(bboxes[i].y2, bboxes[j].y2);
             float w = std::max(float(0), xx2 - xx1 + 1);
             float h = std::max(float(0), yy2 - yy1 + 1);
             float inter = w * h;
-            float ovr = inter / (vArea[i] + vArea[j] - inter);
-            if (ovr >= nms_threshold) {
-                input_boxes.erase(input_boxes.begin() + j);
-                vArea.erase(vArea.begin() + j);
+            float IoU = inter / (bbox_areas[i] + bbox_areas[j] - inter);
+            if (IoU >= nms_threshold) {
+                bboxes.erase(bboxes.begin() + j);
+                bbox_areas.erase(bbox_areas.begin() + j);
             }
             else {
                 j++;
@@ -181,7 +180,7 @@ void RetinaFace::nms(std::vector<BBox> &input_boxes, float nms_threshold) const
     }
 }
 
-void RetinaFace::clip_bboxes(BBox& bbox, int w, int h) const
+inline void RetinaFace::clip_bboxes(BBox& bbox, int w, int h) const
 {
     if(bbox.x1 < 0) bbox.x1 = 0;
     if(bbox.y1 < 0) bbox.y1 = 0;

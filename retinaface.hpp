@@ -8,7 +8,6 @@
 #include <MNN/Tensor.hpp>
 #include <MNN/ImageProcess.hpp>
 
-
 struct Point {
     float x;
     float y;
@@ -39,7 +38,6 @@ struct BBox
     Point landmarks[5];
 };
 
-
 class RetinaFace
 {
 public:
@@ -48,17 +46,14 @@ public:
 
 	void detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) const;
 
-
-
-
 private:
 	void create_anchors(std::vector<Box>& anchors, int w, int h) const;
 	void nms(std::vector<BBox>& input_bboxes, float nms_threshold=0.5) const;
     void clip_bboxes(BBox& bbox, int w, int h) const;
 	
-	float _nms_threshold = 0.4;
-    float _score_threshold = 0.8;
-    float _mean_vals[3];
+	float _nms_threshold = 0.3;
+    float _score_threshold = 0.9;
+    float _mean_vals[3] = {104.f, 117.f, 123.f};
 
     std::shared_ptr<MNN::Interpreter> _net;
     MNN::Session *_net_sess;

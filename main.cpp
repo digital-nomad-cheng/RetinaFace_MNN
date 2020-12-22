@@ -19,6 +19,10 @@ int main(int, char**) {
     std::cout << "total faces:" << final_bboxes.size() << std::endl;
     for (BBox& bbox : final_bboxes) {
     	cv::rectangle(image, cv::Point(bbox.x1, bbox.y1), cv::Point(bbox.x2, bbox.y2), cv::Scalar(255, 0, 0), 2);
+    	for(int i = 0; i < 5; i++) {
+    		cv::Point p(bbox.landmarks[i].x, bbox.landmarks[i].y);
+    		cv::circle(image, p, 2, cv::Scalar(255, 0, 0), 1);
+    	}
     }
     
     cv::imshow("image", image);
