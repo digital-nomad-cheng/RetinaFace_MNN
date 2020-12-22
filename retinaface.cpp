@@ -73,12 +73,48 @@ void RetinaFace::detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) c
     this->create_anchors(anchors, image.cols, image.rows);
     std::cout << "anchors size: " << anchors.size() << std::endl;
 
+    float *scores = this->_output_cls_tensor->host<float>();
+    float *offsets = this->_output_bbox_tensor->host<float>();
+    float *ldmks = this->_output_ldmk_tensor->host<float>();
+
     for (const Box& anchor : anchors) {
         BBox bbox;
+        Box refined_box;
+        
+        if (scores[1] > this->_score_threshold) {
 
+            refined_box.cx = anchor.cx + offsets[0] * 0.1 * anchor.sx;
+            refined_box.cy = anchor.cy + offsets[1] * 0.1 * anchor.sy;
+            refined_box.sx = anchor.sx * exp(offsets[2] * 0.2);
+            refined_box.sy = anchor.sy * exp(offsets[3] * 0.2);
+
+            bbox.x1 = (refined_box.cx - refined_box.sx/2) * image.cols;
+            bbox.y1 = (refined_box.cy - refined_box.sy/2) * image.rows;
+            bbox.x2 = (refined_box.cx + refined_box.sx/2) * image.cols;
+            bbox.y2 = (refined_box.cy + refined_box.sy/2) * image.rows;
+
+            clip_bboxes(bbox, image.cols, image.rows);
+
+            bbox.score = scores[1];
+
+            // landmarks
+            for (int i = 0; i < 5; i++) {
+                bbox.landmarks[i].x = (anchor.cx + ldmks[2*i] * 0.1 * anchor.sx) * image.cols;
+                bbox.landmarks[i].y = (anchor.cy + ldmks[2*i+1] * 0.1 * anchor.sy) * image.rows;
+            }
+
+            final_bboxes.push_back(bbox);
+        }
+
+        scores += 2;
+        offsets += 4;
+        ldmks += 10;
     }
 
-
+    std::sort(final_bboxes.begin(), final_bboxes.end(), [](BBox &lsh, BBox &rsh) {
+        return lsh.score > rsh.score;
+    });
+    nms(final_bboxes, this->_nms_threshold);
 }   
 
 void RetinaFace::create_anchors(std::vector<Box>& anchors, int w, int h) const
@@ -143,4 +179,12 @@ void RetinaFace::nms(std::vector<BBox> &input_boxes, float nms_threshold) const
             }
         }
     }
+}
+
+void RetinaFace::clip_bboxes(BBox& bbox, int w, int h) const
+{
+    if(bbox.x1 < 0) bbox.x1 = 0;
+    if(bbox.y1 < 0) bbox.y1 = 0;
+    if(bbox.x2 > w) bbox.x2 = w;
+    if(bbox.y2 > h) bbox.y2 = h;
 }

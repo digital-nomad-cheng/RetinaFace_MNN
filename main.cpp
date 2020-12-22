@@ -16,5 +16,12 @@ int main(int, char**) {
 
     detector.detect(image, final_bboxes);
 
+    std::cout << "total faces:" << final_bboxes.size() << std::endl;
+    for (BBox& bbox : final_bboxes) {
+    	cv::rectangle(image, cv::Point(bbox.x1, bbox.y1), cv::Point(bbox.x2, bbox.y2), cv::Scalar(255, 0, 0), 2);
+    }
+    
+    cv::imshow("image", image);
+    cv::waitKey(0);
 
 }

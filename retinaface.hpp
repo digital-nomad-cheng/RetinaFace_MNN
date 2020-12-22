@@ -16,6 +16,13 @@ struct Point {
 
 struct Box
 {
+	/* 
+	 * cx: x of box center
+	 * cy: y of box center
+	 * sx: width of box
+	 * sy: height of box
+	 */
+
 	float cx;
     float cy;
     float sx;
@@ -47,9 +54,10 @@ public:
 private:
 	void create_anchors(std::vector<Box>& anchors, int w, int h) const;
 	void nms(std::vector<BBox>& input_bboxes, float nms_threshold=0.5) const;
+    void clip_bboxes(BBox& bbox, int w, int h) const;
 	
-	float _nms_threshold;
-    float _score_threshold;
+	float _nms_threshold = 0.4;
+    float _score_threshold = 0.8;
     float _mean_vals[3];
 
     std::shared_ptr<MNN::Interpreter> _net;
