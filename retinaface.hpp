@@ -28,7 +28,7 @@ struct BBox
     float y1;
     float x2;
     float y2;
-    float s;
+    float score;
     Point landmarks[5];
 };
 
@@ -45,8 +45,8 @@ public:
 
 
 private:
-	void create_anchor(std::vector<Box>& anchor, int w, int h) const;
-	void nms(std::vector<BBox> &input_bboxes, float nms_threshold=0.5) const;
+	void create_anchors(std::vector<Box>& anchors, int w, int h) const;
+	void nms(std::vector<BBox>& input_bboxes, float nms_threshold=0.5) const;
 	
 	float _nms_threshold;
     float _score_threshold;
