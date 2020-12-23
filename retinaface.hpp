@@ -1,9 +1,9 @@
 
 // Reference: https://github.com/biubug6/Face-Detector-1MB-with-landmark/tree/master/Face_Detector_ncnn
 
-#include<string>
+#include <string>
 
-#include<opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include <MNN/Interpreter.hpp>
 #include <MNN/Tensor.hpp>
 #include <MNN/ImageProcess.hpp>
@@ -53,7 +53,10 @@ private:
 	
     float _nms_threshold = 0.4;
     float _score_threshold = 0.6;
-    float _mean_vals[3] = {104.f, 117.f, 123.f};
+    const float _mean_vals[3] = {104.f, 117.f, 123.f};
+
+    const int _in_w = 320;
+    const int _in_h = 480;
 
     std::shared_ptr<MNN::Interpreter> _net;
     MNN::Session *_net_sess;
@@ -65,5 +68,7 @@ private:
     std::shared_ptr<MNN::CV::ImageProcess> pretreat_data;
 
     const int num_threads = 4;
+
+    std::vector<Box> anchors;
 
 };

@@ -37,6 +37,12 @@ RetinaFace::RetinaFace(const std::string& model_file)
     preproc_config.sourceFormat = MNN::CV::BGR;
     preproc_config.destFormat = MNN::CV::BGR;
     this->pretreat_data = std::shared_ptr<MNN::CV::ImageProcess>(MNN::CV::ImageProcess::create(preproc_config));
+
+    // resize session according input shape
+    _net->resizeTensor(this->_input_tensor, {1, 3, _in_h, _in_w});
+    _net->resizeSession(_net_sess);
+
+    this->create_anchors(anchors, _in_w, _in_h);
 }
 
 RetinaFace::~RetinaFace()
@@ -48,14 +54,9 @@ void RetinaFace::detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) c
 {
     // forward inference
 
-    // resize session according input shape
-    std::vector<int> input_dims = {1, 3, image.rows, image.cols};
-    _net->resizeTensor(this->_input_tensor, input_dims);
-    _net->resizeSession(_net_sess);
-
     // preprocess image
     MNN::CV::Matrix trans;
-    trans.postScale(1.0f/image.cols, 1.0f/image.rows);
+    trans.postScale(1.0f/_in_w, 1.0f/_in_h);
     trans.postScale(image.cols, image.rows);
     pretreat_data->setMatrix(trans);
     pretreat_data->convert((uint8_t*)image.data, image.cols, image.rows, 0, this->_input_tensor);
@@ -68,9 +69,6 @@ void RetinaFace::detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) c
         " output_shape[1]: " << output_shape[1] << 
         " output_shape[2]: " << output_shape[2] << std::endl;
     */
-    
-    std::vector<Box> anchors;
-    this->create_anchors(anchors, image.cols, image.rows);
 
     float *scores = this->_output_cls_tensor->host<float>();
     float *offsets = this->_output_bbox_tensor->host<float>();
