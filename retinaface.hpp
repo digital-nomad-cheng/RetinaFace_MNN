@@ -51,8 +51,8 @@ private:
 	void nms(std::vector<BBox>& input_bboxes, float nms_threshold=0.5) const;
     void clip_bboxes(BBox& bbox, int w, int h) const;
 	
-	float _nms_threshold = 0.3;
-    float _score_threshold = 0.9;
+	float _nms_threshold = 0.4;
+    float _score_threshold = 0.6;
     float _mean_vals[3] = {104.f, 117.f, 123.f};
 
     std::shared_ptr<MNN::Interpreter> _net;

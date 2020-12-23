@@ -35,7 +35,7 @@ RetinaFace::RetinaFace(const std::string& model_file)
     // no norm in this model
     // ::memcpy(preproc_config.normal, norm_vals, sizeof(norm_vals));
     preproc_config.sourceFormat = MNN::CV::BGR;
-    preproc_config.destFormat = MNN::CV::RGB;
+    preproc_config.destFormat = MNN::CV::BGR;
     this->pretreat_data = std::shared_ptr<MNN::CV::ImageProcess>(MNN::CV::ImageProcess::create(preproc_config));
 }
 
@@ -46,10 +46,8 @@ RetinaFace::~RetinaFace()
 
 void RetinaFace::detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) const
 {
-    cv::imshow("image", image);
-    cv::waitKey(0);
-
     // forward inference
+
     // resize session according input shape
     std::vector<int> input_dims = {1, 3, image.rows, image.cols};
     _net->resizeTensor(this->_input_tensor, input_dims);
@@ -64,14 +62,15 @@ void RetinaFace::detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) c
     
     _net->runSession(_net_sess);
 
+    /*
     auto output_shape = this->_output_cls_tensor->shape();
     std::cout << "output_shape[0]: " << output_shape[0] <<
         " output_shape[1]: " << output_shape[1] << 
         " output_shape[2]: " << output_shape[2] << std::endl;
-
+    */
+    
     std::vector<Box> anchors;
     this->create_anchors(anchors, image.cols, image.rows);
-    std::cout << "anchors size: " << anchors.size() << std::endl;
 
     float *scores = this->_output_cls_tensor->host<float>();
     float *offsets = this->_output_bbox_tensor->host<float>();
@@ -122,30 +121,29 @@ void RetinaFace::create_anchors(std::vector<Box>& anchors, int w, int h) const
 {
     // create predefined anchors
     anchors.clear();
-    std::vector<std::vector<int> > feature_map(3), min_sizes(3);
-    float steps[] = {8, 16, 32};
+    std::vector<std::vector<int> > feature_map(3), anchor_sizes(3);
+    float strides[3] = {8, 16, 32};
     for (int i = 0; i < feature_map.size(); ++i) {
-        feature_map[i].push_back(ceil(h/steps[i]));
-        feature_map[i].push_back(ceil(w/steps[i]));
+        feature_map[i].push_back(ceil(h/strides[i]));
+        feature_map[i].push_back(ceil(w/strides[i]));
     }
-    std::vector<int> minsize1 = {10, 20};
-    min_sizes[0] = minsize1;
-    std::vector<int> minsize2 = {32, 64};
-    min_sizes[1] = minsize2;
-    std::vector<int> minsize3 = {128, 256};
-    min_sizes[2] = minsize3;
+    std::vector<int> stage1_size = {10, 20};
+    anchor_sizes[0] = stage1_size;
+    std::vector<int> stage2_size = {32, 64};
+    anchor_sizes[1] = stage2_size;
+    std::vector<int> stage3_size = {128, 256};
+    anchor_sizes[2] = stage3_size;
     
     for (int k = 0; k < feature_map.size(); ++k) {
-        std::vector<int> min_size = min_sizes[k];
+        std::vector<int> anchor_size = anchor_sizes[k];
         for (int i = 0; i < feature_map[k][0]; ++i) {
             for (int j = 0; j < feature_map[k][1]; ++j) {
-                for (int l = 0; l < min_size.size(); ++l) {
-                    float s_kx = min_size[l]*1.0/w;
-                    float s_ky = min_size[l]*1.0/h;
-                    float cx = (j + 0.5) * steps[k]/w;
-                    float cy = (i + 0.5) * steps[k]/h;
-                    Box axil = {cx, cy, s_kx, s_ky};
-                    anchors.push_back(axil);
+                for (int l = 0; l < anchor_size.size(); ++l) {
+                    float kx = anchor_size[l]* 1.0 / w;
+                    float ky = anchor_size[l]* 1.0 / h;
+                    float cx = (j + 0.5) * strides[k] / w;
+                    float cy = (i + 0.5) * strides[k] / h;
+                    anchors.push_back({cx, cy, kx, ky});
                 }
             }
         }
@@ -172,8 +170,7 @@ void RetinaFace::nms(std::vector<BBox>& bboxes, float nms_threshold) const
             if (IoU >= nms_threshold) {
                 bboxes.erase(bboxes.begin() + j);
                 bbox_areas.erase(bbox_areas.begin() + j);
-            }
-            else {
+            } else {
                 j++;
             }
         }
