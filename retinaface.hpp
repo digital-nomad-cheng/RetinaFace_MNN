@@ -15,14 +15,14 @@ struct Point {
 
 struct Box
 {
-	/* 
-	 * cx: x of box center
-	 * cy: y of box center
-	 * sx: width of box
-	 * sy: height of box
-	 */
+    /* 
+     * cx: x of box center
+     * cy: y of box center
+     * sx: width of box
+     * sy: height of box
+     */
 
-	float cx;
+    float cx;
     float cy;
     float sx;
     float sy;
@@ -30,7 +30,7 @@ struct Box
 
 struct BBox
 {
-	float x1;
+    float x1;
     float y1;
     float x2;
     float y2;
@@ -41,17 +41,17 @@ struct BBox
 class RetinaFace
 {
 public:
-	RetinaFace(const std::string& model_file);
-	~RetinaFace();
+    RetinaFace(const std::string& model_file);
+    ~RetinaFace();
 
-	void detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) const;
+    void detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) const;
 
 private:
-	void create_anchors(std::vector<Box>& anchors, int w, int h) const;
-	void nms(std::vector<BBox>& input_bboxes, float nms_threshold=0.5) const;
+    void create_anchors(std::vector<Box>& anchors, int w, int h) const;
+    void nms(std::vector<BBox>& input_bboxes, float nms_threshold=0.5) const;
     void clip_bboxes(BBox& bbox, int w, int h) const;
 	
-	float _nms_threshold = 0.4;
+    float _nms_threshold = 0.4;
     float _score_threshold = 0.6;
     float _mean_vals[3] = {104.f, 117.f, 123.f};
 
