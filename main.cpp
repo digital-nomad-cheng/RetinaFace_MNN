@@ -9,8 +9,8 @@ int main(int, char**) {
 	
     std::cout << "Hello, world!\n";
 
-    cv::Mat image = cv::imread("/Users/vincent/Documents/Repo/RetinaFace_MNN/test.jpg");
-    RetinaFace detector("/Users/vincent/Documents/Repo/RetinaFace_MNN/retinaface.mnn");
+    cv::Mat image = cv::imread("/home/vagrant/work/RetinaFace_MNN/test.jpg");
+    RetinaFace detector("/home/vagrant/work/RetinaFace_MNN/retinaface.mnn");
 
     const int max_side = 320;
     float long_side = std::max(image.cols, image.rows);

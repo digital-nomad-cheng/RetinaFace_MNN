@@ -55,8 +55,8 @@ private:
     float _score_threshold = 0.6;
     const float _mean_vals[3] = {104.f, 117.f, 123.f};
 
-    const int _in_w = 320;
-    const int _in_h = 480;
+    const int _in_w = 480;
+    const int _in_h = 320;
 
     std::shared_ptr<MNN::Interpreter> _net;
     MNN::Session *_net_sess;
