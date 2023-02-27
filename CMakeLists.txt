@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(OpenCV_DIR /use/local/lib)
 set(OpenCV_INCLUDE_DIRS /user/local/include/opencv4)
-set(MNN_DIR /home/vagrant/MNN-2.3.0/build/libMNN.so)
+set(MNN_DIR /home/vagrant/opt/MNN-2.3.0/build/libMNN.so)
 set(MNN_INCLUDE_DIRS /user/local/include/MNN)
 
 find_package( OpenCV REQUIRED )
