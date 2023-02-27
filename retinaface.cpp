@@ -59,10 +59,16 @@ void RetinaFace::detect(const cv::Mat& image, std::vector<BBox>& final_bboxes) c
     trans.postScale(1.0f/_in_w, 1.0f/_in_h);
     trans.postScale(image.cols, image.rows);
     pretreat_data->setMatrix(trans);
-    pretreat_data->convert((uint8_t*)image.data, image.cols, image.rows, 0, this->_input_tensor);
-    
-    _net->runSession(_net_sess);
-
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    start = std::chrono::system_clock::now();
+    const int REPEAT_TIMES = 1000; 
+    for (int i = 0; i < REPEAT_TIMES; i++) { 
+        pretreat_data->convert((uint8_t*)image.data, image.cols, image.rows, 0, this->_input_tensor);
+        _net->runSession(_net_sess);
+    }
+    end = std::chrono::system_clock::now();
+    double elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Elapsed time for running inference for " << REPEAT_TIMES << " loops: " << elapsed_time << std::endl;
     /*
     auto output_shape = this->_output_cls_tensor->shape();
     std::cout << "output_shape[0]: " << output_shape[0] <<
